@@ -1,13 +1,11 @@
 package com.pi.siabank.authservice.controller;
 
-import com.pi.siabank.authservice.dto.ApiResponse;
-import com.pi.siabank.authservice.dto.RegisterUserDto;
 import com.pi.siabank.authservice.model.User;
 import com.pi.siabank.authservice.service.AuthenticationService;
+import com.pi.siabank.common.authservice.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,4 +36,19 @@ public class AuthController {
         );
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponseDto>> login(@Valid @RequestBody LoginRequestDto loginRequest) {
+        log.info("Login request received for user: {}", loginRequest.getUsername());
+        LoginResponseDto response = authenticationService.login(loginRequest);
+        log.info("Login successful for user: {}", loginRequest.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<LoginResponseDto>> refreshToken(@Valid @RequestBody RefreshTokenRequestDto request) {
+        log.info("Token refresh request received.");
+        LoginResponseDto response = authenticationService.refreshToken(request);
+        log.info("Token refresh successful.");
+        return ResponseEntity.ok(ApiResponse.success(response, "Tokens refreshed successfully"));
+    }
 }

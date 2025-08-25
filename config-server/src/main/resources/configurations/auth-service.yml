@@ -1,3 +1,5 @@
+server:
+  port: 9000
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sia_auth_db
@@ -10,8 +12,11 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
   flyway:
     enabled: true
-server:
-  port: 9000
+jwt:
+  secret: "6XAewBPP/DO4xY1Gw7iAZXJvfmDP1wkv5o26maw5N2s="
+  expiration:
+    access-token: 600000   # 10 minutes
+    refresh-token: 604800000 # 7 days

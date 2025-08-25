@@ -1,4 +1,4 @@
-package com.pi.siabank.authservice.dto;
+package com.pi.siabank.common.authservice.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

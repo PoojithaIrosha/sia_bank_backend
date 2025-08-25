@@ -1,4 +1,4 @@
-package com.pi.siabank.authservice.exception;
+package com.pi.siabank.common.authservice.exception;
 
 public class RoleNotFoundException extends RuntimeException {
     public RoleNotFoundException(String message) {

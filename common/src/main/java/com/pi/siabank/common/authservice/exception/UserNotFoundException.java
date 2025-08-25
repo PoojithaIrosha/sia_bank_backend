@@ -1,4 +1,4 @@
-package com.pi.siabank.authservice.exception;
+package com.pi.siabank.common.authservice.exception;
 
 import org.springframework.security.core.AuthenticationException;
 

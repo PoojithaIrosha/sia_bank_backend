@@ -2,45 +2,56 @@ package com.pi.siabank.apigateway.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
-import java.util.Date;
+import java.security.Key;
+import java.util.function.Function;
 
+@Component
 public class JwtUtil {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
     private static final String SECRET_KEY = "MySuperSecretKey12345"; // store in config server in production
-    private static final long EXPIRATION_MS = 3600_000; // 1 hour
 
-    // Generate JWT (for your auth service)
-    public static String generateToken(String username) {
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
-                .compact();
-    }
-
-    // Validate JWT
-    public static boolean validateToken(String token) {
+    public void validateToken(final String token, final String secret) {
         try {
-            Claims claims = Jwts.parser()
-                    .setSigningKey(SECRET_KEY)
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            return claims.getExpiration().after(new Date());
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey(secret))
+                    .build()
+                    .parseClaimsJws(token);
+            log.info("Token validation successful");
+        } catch (SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+            throw new RuntimeException("Invalid JWT signature", e);
         } catch (Exception e) {
-            return false;
+            log.error("Token validation failed: {}", e.getMessage());
+            throw new RuntimeException("Token validation failed", e);
         }
     }
 
-    // Extract username from token
-    public static String getUsername(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+    public String extractUsername(final String token, final String secret) {
+        return extractClaim(token, secret, Claims::getSubject);
+    }
+
+    private <T> T extractClaim(String token, String secret, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token, secret);
+        return claimsResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(final String token, final String secret) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey(secret))
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject();
+    }
+
+    private Key getSigningKey(String secret) {
+        byte[] keyBytes = secret.getBytes();
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

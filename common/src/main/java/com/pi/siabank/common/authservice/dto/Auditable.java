@@ -1,4 +1,4 @@
-package com.pi.siabank.authservice.dto;
+package com.pi.siabank.common.authservice.dto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;

@@ -1,7 +1,7 @@
 package com.pi.siabank.authservice.mapper;
 
-import com.pi.siabank.authservice.dto.RegisterUserDto;
 import com.pi.siabank.authservice.model.User;
+import com.pi.siabank.common.authservice.dto.RegisterUserDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

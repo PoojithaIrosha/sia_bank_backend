@@ -1,7 +1,7 @@
 package com.pi.siabank.authservice.service;
 
-import com.pi.siabank.authservice.exception.UserNotFoundException;
 import com.pi.siabank.authservice.repository.UserRepository;
+import com.pi.siabank.common.authservice.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

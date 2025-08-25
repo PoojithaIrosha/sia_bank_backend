@@ -1,4 +1,4 @@
-package com.pi.siabank.authservice.dto;
+package com.pi.siabank.common.authservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -44,13 +44,24 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static ApiResponse<?> error(String message, HttpStatus status, Map<String, ?> errors) {
-        return ApiResponse.builder()
+    public static <T> ApiResponse<T> error(String message, HttpStatus status, Map<String, ?> errors) {
+        return ApiResponse.<T>builder()
                 .timestamp(ZonedDateTime.now())
                 .message(message)
                 .statusCode(status.value())
                 .status(status)
                 .errors(errors)
+                .data(null) // Explicitly set data to null for the generic type
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return ApiResponse.<T>builder()
+                .timestamp(ZonedDateTime.now())
+                .message(message)
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .data(null) // Explicitly set data to null for the generic type
                 .build();
     }
 }
