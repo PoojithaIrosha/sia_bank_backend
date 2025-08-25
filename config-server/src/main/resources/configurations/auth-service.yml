@@ -3,8 +3,8 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sia_auth_db
-    username: postgres
-    password: 1234
+    username: ${db-username}
+    password: ${db-password}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -16,7 +16,7 @@ spring:
   flyway:
     enabled: true
 jwt:
-  secret: "6XAewBPP/DO4xY1Gw7iAZXJvfmDP1wkv5o26maw5N2s="
+  secret: ${jwt-token-secret}
   expiration:
     access-token: 600000   # 10 minutes
     refresh-token: 604800000 # 7 days

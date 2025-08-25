@@ -13,7 +13,7 @@ management:
     health:
       show-details: always
 jwt:
-  secret: "6XAewBPP/DO4xY1Gw7iAZXJvfmDP1wkv5o26maw5N2s="
+  secret: ${jwt-token-secret}
 spring:
   cloud:
     gateway:
