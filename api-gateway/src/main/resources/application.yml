@@ -2,7 +2,7 @@ spring:
   application:
     name: api-gateway
   config:
-    import: optional:configserver:http://localhost:8888,optional:vault://
+    import: optional:configserver:http://localhost:8888,optional:vault://secret/dev/token
   cloud:
     vault:
       uri: http://localhost:8200
@@ -10,4 +10,3 @@ spring:
       kv:
         enabled: true
         backend: secret
-        default-context: dev/auth-service
