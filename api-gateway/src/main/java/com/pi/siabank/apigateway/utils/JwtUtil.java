@@ -15,7 +15,9 @@ import java.util.function.Function;
 public class JwtUtil {
 
     private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
-    private static final String SECRET_KEY = "MySuperSecretKey12345"; // store in config server in production
+
+    private static final String CLAIM_TOKEN_TYPE = "token_type";
+    private static final String TOKEN_TYPE_ACCESS = "access";
 
     public void validateToken(final String token, final String secret) {
         try {
@@ -35,6 +37,15 @@ public class JwtUtil {
 
     public String extractUsername(final String token, final String secret) {
         return extractClaim(token, secret, Claims::getSubject);
+    }
+
+    public String extractTokenType(final String token, final String secret) {
+        return extractClaim(token, secret, claims -> claims.get(CLAIM_TOKEN_TYPE, String.class));
+    }
+
+    public boolean isAccessToken(final String token, final String secret) {
+        String type = extractTokenType(token, secret);
+        return TOKEN_TYPE_ACCESS.equals(type);
     }
 
     private <T> T extractClaim(String token, String secret, Function<Claims, T> claimsResolver) {

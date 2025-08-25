@@ -99,8 +99,8 @@ public class AuthenticationService {
             throw new TokenRefreshException("Invalid refresh token: user not found.");
         }
 
-        if (!jwtService.isTokenValid(requestRefreshToken, userDetails)) {
-            throw new TokenRefreshException("Refresh token is invalid or expired.");
+        if (!jwtService.isRefreshTokenValid(requestRefreshToken, userDetails)) {
+            throw new TokenRefreshException("Refresh token is invalid, expired, or not of type 'refresh'.");
         }
 
         String newAccessToken = jwtService.generateToken(userDetails);

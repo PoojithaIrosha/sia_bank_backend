@@ -61,6 +61,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             try {
                 jwtUtil.validateToken(token, secret);
 
+                if (!jwtUtil.isAccessToken(token, secret)) {
+                    log.warn("Token presented is not an access token");
+                    return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid token type");
+                }
+
                 String username = jwtUtil.extractUsername(token, secret);
                 ServerHttpRequest mutatedRequest = request.mutate()
                         .header("X-Authenticated-Username", username)

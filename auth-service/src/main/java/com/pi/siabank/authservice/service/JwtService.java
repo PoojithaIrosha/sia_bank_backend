@@ -10,16 +10,19 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
+
+    private static final String CLAIM_TOKEN_TYPE = "token_type";
+    private static final String CLAIM_AUDIENCE = "aud";
+    private static final String CLAIM_JTI = "jti";
+
+    private static final String TOKEN_TYPE_ACCESS = "access";
+    private static final String TOKEN_TYPE_REFRESH = "refresh";
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
@@ -42,18 +45,32 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    public String extractTokenType(String token) {
+        return extractClaim(token, claims -> claims.get(CLAIM_TOKEN_TYPE, String.class));
+    }
+
+    public boolean isAccessToken(String token) {
+        return TOKEN_TYPE_ACCESS.equals(extractTokenType(token));
+    }
+
+    public boolean isRefreshToken(String token) {
+        return TOKEN_TYPE_REFRESH.equals(extractTokenType(token));
+    }
+
     public String generateToken(UserDetails userDetails) {
-        Map<String, Object> extraClaims = defaultClaims(userDetails);
+        Map<String, Object> extraClaims = accessTokenClaims(userDetails);
         return buildToken(extraClaims, userDetails, ACCESS_TOKEN_EXPIRATION);
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        Map<String, Object> extraClaims = defaultClaims(userDetails);
+        Map<String, Object> extraClaims = refreshTokenClaims();
         return buildToken(extraClaims, userDetails, REFRESH_TOKEN_EXPIRATION);
     }
 
-    private Map<String, Object> defaultClaims(UserDetails userDetails) {
+    private Map<String, Object> accessTokenClaims(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TOKEN_TYPE, TOKEN_TYPE_ACCESS);
+        claims.put(CLAIM_AUDIENCE, "api");
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
         if (authorities != null) {
             List<String> roles = authorities.stream()
@@ -61,6 +78,15 @@ public class JwtService {
                     .collect(Collectors.toList());
             claims.put("roles", roles);
         }
+        return claims;
+    }
+
+    private Map<String, Object> refreshTokenClaims() {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TOKEN_TYPE, TOKEN_TYPE_REFRESH);
+        claims.put(CLAIM_AUDIENCE, "auth");
+        claims.put(CLAIM_JTI, UUID.randomUUID().toString());
+        // No roles or permissions in refresh token
         return claims;
     }
 
@@ -79,6 +105,10 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
+        return isTokenValid(token, userDetails) && isRefreshToken(token);
     }
 
     private boolean isTokenExpired(String token) {
