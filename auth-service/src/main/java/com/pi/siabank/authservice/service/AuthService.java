@@ -1,6 +1,7 @@
 package com.pi.siabank.authservice.service;
 
 import com.pi.siabank.authservice.mapper.UserMapper;
+import com.pi.siabank.authservice.model.ERole;
 import com.pi.siabank.authservice.model.Role;
 import com.pi.siabank.authservice.model.User;
 import com.pi.siabank.authservice.repository.RoleRepository;
@@ -28,7 +29,7 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthenticationService {
+public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -38,8 +39,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-
-    private static final String DEFAULT_ROLE = "ROLE_CUSTOMER";
+    private static final ERole DEFAULT_ROLE = ERole.ROLE_CUSTOMER;
 
     public User registerUser(RegisterUserDto registerUserDto) {
         log.info("Attempting to register new user with username: {}", registerUserDto.getUsername());
@@ -111,6 +111,5 @@ public class AuthenticationService {
                 .refreshToken(newRefreshToken)
                 .build();
     }
-
 
 }
