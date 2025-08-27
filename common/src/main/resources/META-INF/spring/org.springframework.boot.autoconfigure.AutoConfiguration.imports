@@ -1,0 +1,2 @@
+com.pi.siabank.common.security.CommonSecurityAutoConfiguration
+com.pi.siabank.common.audit.CommonAuditAutoConfiguration

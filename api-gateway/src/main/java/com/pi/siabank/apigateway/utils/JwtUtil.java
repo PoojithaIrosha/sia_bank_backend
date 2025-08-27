@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
@@ -39,6 +40,11 @@ public class JwtUtil {
         return extractClaim(token, secret, Claims::getSubject);
     }
 
+    public List<String> extractRoles(final String token, final String secret) {
+        Claims claims = extractAllClaims(token, secret);
+        return claims.get("roles", List.class);
+    }
+
     public String extractTokenType(final String token, final String secret) {
         return extractClaim(token, secret, claims -> claims.get(CLAIM_TOKEN_TYPE, String.class));
     }
@@ -62,7 +68,13 @@ public class JwtUtil {
     }
 
     private Key getSigningKey(String secret) {
-        byte[] keyBytes = secret.getBytes();
+        byte[] keyBytes;
+        try {
+            keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secret);
+        } catch (IllegalArgumentException ex) {
+            // Fallback: treat secret as plain text
+            keyBytes = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

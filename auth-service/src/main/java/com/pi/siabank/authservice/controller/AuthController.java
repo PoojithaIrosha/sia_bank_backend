@@ -8,10 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -51,4 +49,17 @@ public class AuthController {
         log.info("Token refresh successful.");
         return ResponseEntity.ok(ApiResponse.success(response, "Tokens refreshed successfully"));
     }
+
+    @GetMapping("/test-customer")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<String> testCus() {
+        return ResponseEntity.ok("Hello from Customer");
+    }
+
+    @GetMapping("/test-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> testAdmin() {
+        return ResponseEntity.ok("Hello from Admin");
+    }
+
 }

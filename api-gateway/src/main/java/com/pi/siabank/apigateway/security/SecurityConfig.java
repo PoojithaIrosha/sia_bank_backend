@@ -18,7 +18,7 @@ public class SecurityConfig {
                 .authorizeExchange(auth -> auth
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("api/v1/auth/**").permitAll()
+                        .pathMatchers("/api/v1/auth/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)

@@ -1,10 +1,12 @@
 package com.pi.siabank.apigateway.filter;
 
 import com.pi.siabank.apigateway.utils.JwtUtil;
+import com.pi.siabank.common.security.AuthHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,7 +19,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Component
-public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> {
+public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> implements GlobalFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
@@ -39,46 +41,56 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
     @Override
     public GatewayFilter apply(Config config) {
-        return (exchange, chain) -> {
-            ServerHttpRequest request = exchange.getRequest();
-            log.info("Request received for URI: {}", request.getURI());
+        return this::handle;
+    }
 
-            if (isPublicEndpoint(request)) {
-                return chain.filter(exchange);
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+        return handle(exchange, chain);
+    }
+
+    private Mono<Void> handle(ServerWebExchange exchange, org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        log.info("Request received for URI: {}", request.getURI());
+
+        if (isPublicEndpoint(request)) {
+            return chain.filter(exchange);
+        }
+
+        if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+            return onError(exchange, HttpStatus.UNAUTHORIZED, "Authorization header is missing");
+        }
+
+        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid Authorization header format");
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            jwtUtil.validateToken(token, secret);
+
+            if (!jwtUtil.isAccessToken(token, secret)) {
+                log.warn("Token presented is not an access token");
+                return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid token type");
             }
 
-            if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                return onError(exchange, HttpStatus.UNAUTHORIZED, "Authorization header is missing");
-            }
+            String username = jwtUtil.extractUsername(token, secret);
+            List<String> roles = jwtUtil.extractRoles(token, secret);
+            String rolesHeader = String.join(",", roles);
+            ServerHttpRequest mutatedRequest = request.mutate()
+                    .header(AuthHeaders.USER_HEADER, username)
+                    .header(AuthHeaders.ROLES_HEADER, rolesHeader)
+                    .build();
 
-            String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid Authorization header format");
-            }
+            log.info("Authentication successful. Forwarding request for user: {}", username);
+            return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
-            String token = authHeader.substring(7);
-
-            try {
-                jwtUtil.validateToken(token, secret);
-
-                if (!jwtUtil.isAccessToken(token, secret)) {
-                    log.warn("Token presented is not an access token");
-                    return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid token type");
-                }
-
-                String username = jwtUtil.extractUsername(token, secret);
-                ServerHttpRequest mutatedRequest = request.mutate()
-                        .header("X-Authenticated-Username", username)
-                        .build();
-
-                log.info("Authentication successful. Forwarding request for user: {}", username);
-                return chain.filter(exchange.mutate().request(mutatedRequest).build());
-
-            } catch (Exception e) {
-                log.error("Authentication failed: {}", e.getMessage());
-                return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid or expired token");
-            }
-        };
+        } catch (Exception e) {
+            log.error("Authentication failed: {}", e.getMessage());
+            return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+        }
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request) {
