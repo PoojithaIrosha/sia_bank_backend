@@ -31,7 +31,8 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/auth/login",
             "/auth/register",
-            "/auth/refresh"
+            "/auth/refresh",
+            "/auth/logout"
     );
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {

@@ -1,20 +1,28 @@
 package com.pi.siabank.authservice.service;
 
+import com.pi.siabank.authservice.model.RefreshToken;
+import com.pi.siabank.authservice.model.User;
+import com.pi.siabank.authservice.repository.RefreshTokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
     private static final String CLAIM_TOKEN_TYPE = "token_type";
@@ -35,6 +43,8 @@ public class JwtService {
 
     @Value("${spring.application.name}")
     private String issuer;
+
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -62,9 +72,19 @@ public class JwtService {
         return buildToken(extraClaims, userDetails, ACCESS_TOKEN_EXPIRATION);
     }
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        Map<String, Object> extraClaims = refreshTokenClaims();
-        return buildToken(extraClaims, userDetails, REFRESH_TOKEN_EXPIRATION);
+    public String generateAndSaveRefreshToken(User userDetails) {
+        UUID jti = UUID.randomUUID();
+        Map<String, Object> extraClaims = refreshTokenClaims(jti.toString());
+        String refreshToken = buildToken(extraClaims, userDetails, REFRESH_TOKEN_EXPIRATION);
+        Instant expiryDate = Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION);
+
+        refreshTokenRepository.save(RefreshToken.builder()
+                .refreshToken(refreshToken)
+                .user((User) userDetails)
+                .expiryDate(expiryDate)
+                .build());
+
+        return refreshToken;
     }
 
     private Map<String, Object> accessTokenClaims(UserDetails userDetails) {
@@ -81,12 +101,11 @@ public class JwtService {
         return claims;
     }
 
-    private Map<String, Object> refreshTokenClaims() {
+    private Map<String, Object> refreshTokenClaims(String jti) {
         Map<String, Object> claims = new HashMap<>();
         claims.put(CLAIM_TOKEN_TYPE, TOKEN_TYPE_REFRESH);
         claims.put(CLAIM_AUDIENCE, "auth");
-        claims.put(CLAIM_JTI, UUID.randomUUID().toString());
-        // No roles or permissions in refresh token
+        claims.put(CLAIM_JTI, jti);
         return claims;
     }
 

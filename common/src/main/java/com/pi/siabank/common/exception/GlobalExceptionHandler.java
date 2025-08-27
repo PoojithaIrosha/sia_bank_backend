@@ -1,6 +1,7 @@
 package com.pi.siabank.common.exception;
 
 import com.pi.siabank.common.authservice.dto.ApiResponse;
+import com.pi.siabank.common.authservice.exception.NoRefreshTokenFoundException;
 import com.pi.siabank.common.authservice.exception.TokenRefreshException;
 import com.pi.siabank.common.authservice.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +95,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("No Resource Found", HttpStatus.NOT_FOUND, new HashMap<>()));
+    }
+
+    @ExceptionHandler(NoRefreshTokenFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoRefreshTokenFound(NoRefreshTokenFoundException ex) {
+        log.warn("No refresh token found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("No Refresh Token Found", HttpStatus.NOT_FOUND, new HashMap<>()));
     }
 
     @ExceptionHandler(Exception.class)
